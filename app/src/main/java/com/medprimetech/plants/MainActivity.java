@@ -8,6 +8,9 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -18,7 +21,10 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity  {
@@ -27,7 +33,7 @@ public class MainActivity extends AppCompatActivity  {
     private ListView lvToolbarSerch;
     private String TAG = MainActivity.class.getSimpleName();
     String[] arrays = new String[]{"98411", "98422", "98433", "98444", "98455"};
-    ArrayAdapter<String> adapter;
+
 
 
     //Drawer variables
@@ -37,6 +43,14 @@ public class MainActivity extends AppCompatActivity  {
     private ActionBarDrawerToggle mDrawerToggle;
     private DrawerLayout mDrawerLayout;
     private String mActivityTitle;
+
+    // recycle card varuables
+    private static RecyclerView.Adapter adapter;
+    private RecyclerView.LayoutManager layoutManager;
+    private static RecyclerView recyclerView;
+    private static ArrayList<DataModel> data;
+    static View.OnClickListener myOnClickListener;
+    private static ArrayList<Integer> removedItems;
 
 
     @Override
@@ -56,6 +70,30 @@ public class MainActivity extends AppCompatActivity  {
 //            }
 //        });
 
+
+
+        //recycler
+        myOnClickListener = new MyOnClickListener(this);
+
+        recyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+        recyclerView.setHasFixedSize(true);
+
+        layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+
+        data = new ArrayList<DataModel>();
+        for (int i = 0; i < MyData.nameArray.length; i++) {
+            data.add(new DataModel(
+                    MyData.nameArray[i],
+                    MyData.versionArray[i],
+                    MyData.id_[i],
+                    MyData.drawableArray[i]
+            ));
+        }
+
+        adapter = new CustomAdapter(data);
+        recyclerView.setAdapter(adapter);
 
         mActivityTitle = "Feeds";
         setupDrawer();
@@ -113,9 +151,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private void setUpViews() {
         tbMainSearch = (Toolbar)findViewById(R.id.tb_toolbarsearch);
-//        lvToolbarSerch =(ListView) findViewById(R.id.lv_toolbarsearch);
-//        adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,arrays);
-//        lvToolbarSerch.setAdapter(adapter);
+
         setSupportActionBar(tbMainSearch);
 
         ActionBar actionBar = getSupportActionBar();
@@ -154,4 +190,93 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
+
+
+
+    private static class MyOnClickListener implements View.OnClickListener {
+
+        private final Context context;
+
+        private MyOnClickListener(Context context) {
+            this.context = context;
+        }
+
+        @Override
+        public void onClick(View v) {
+            //removeItem(v);
+            Log.d("test", "onClick: ");
+            addRemovedItemToList();
+
+        }
+
+        private void removeItem(View v) {
+            int selectedItemPosition = recyclerView.getChildPosition(v);
+            RecyclerView.ViewHolder viewHolder
+                    = recyclerView.findViewHolderForPosition(selectedItemPosition);
+            TextView textViewName
+                    = (TextView) viewHolder.itemView.findViewById(R.id.textViewName);
+            String selectedName = (String) textViewName.getText();
+            int selectedItemId = -1;
+            for (int i = 0; i < MyData.nameArray.length; i++) {
+                if (selectedName.equals(MyData.nameArray[i])) {
+                    selectedItemId = MyData.id_[i];
+                }
+            }
+            removedItems.add(selectedItemId);
+            data.remove(selectedItemPosition);
+            adapter.notifyItemRemoved(selectedItemPosition);
+        }
+    }
+
+
+
+
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        super.onOptionsItemSelected(item);
+////        if (item.getItemId() == R.id.add_item) {
+////            //check if any items to add
+////            if (removedItems.size() != 0) {
+////                addRemovedItemToList();
+////            } else {
+////                Toast.makeText(this, "Nothing to add", Toast.LENGTH_SHORT).show();
+////            }
+////        }
+//
+//
+//
+//        if(mDrawerToggle.onOptionsItemSelected(item)) {
+//            if (removedItems.size() != 0) {
+//                addRemovedItemToList();
+//            } else {
+//                Toast.makeText(this, "Nothing to add", Toast.LENGTH_SHORT).show();
+//            }
+//            return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
+
+    private static void addRemovedItemToList() {
+        for(int i=0; i< MyData.nameArray.length;i++) {
+
+
+            int addItemAtListPosition = 3;
+            data.add(addItemAtListPosition, new DataModel(
+                    MyData.nameArray[i],
+                    MyData.versionArray[i],
+                    MyData.id_[i],
+                    MyData.drawableArray[i]
+            ));
+            adapter.notifyItemInserted(addItemAtListPosition);
+
+        }
+    }
+
+
+
 }
+
+
+
+

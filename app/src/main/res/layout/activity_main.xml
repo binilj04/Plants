@@ -14,30 +14,40 @@
         android:fitsSystemWindows="true">
 
 
-    <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context="com.medprimetech.plants.MainActivity">
-
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/tb_toolbarsearch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/holo_green_light"
-            >
-        <EditText
+        <RelativeLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/myEditText"
-            android:background="@android:color/holo_green_dark"
-            android:drawableRight="@android:drawable/ic_menu_search"/>
-        </android.support.v7.widget.Toolbar>
+            tools:context="com.medprimetech.plants.MainActivity">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/tb_toolbarsearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/holo_green_light"
+                >
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/myEditText"
+                android:background="@android:color/holo_green_dark"
+                android:drawableRight="@android:drawable/ic_menu_search"/>
+            </android.support.v7.widget.Toolbar>
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/my_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="vertical"
+                android:layout_below="@+id/tb_toolbarsearch"
+                />
 
 
 
-    </RelativeLayout>
+        </RelativeLayout>
+
+
 
     <!-- Side navigation drawer UI -->
         <android.support.design.widget.NavigationView

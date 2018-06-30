@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "803586002902-gamecq23a0k0k4ofqglgoplg6skkgd8l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.medprimetech.plants",
+            "certificate_hash": "1354596aa6072a22b1ace38f81d395dee7aca1e7"
+          }
+        },
+        {
           "client_id": "803586002902-2bfirc5q3pgt4vpjihudqceqralt2a66.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,8 +37,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "803586002902-2bfirc5q3pgt4vpjihudqceqralt2a66.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2
