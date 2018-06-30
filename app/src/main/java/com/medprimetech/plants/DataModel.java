@@ -7,15 +7,23 @@ public class DataModel {
 
 
     String name;
-    String version;
+    String author;
     int id_;
     Bitmap image;
+    String imageURL;
 
-    public DataModel(String name, String version, int id_, Bitmap image) {
+    public DataModel(String name, String author, int id_, Bitmap image) {
         this.name = name;
-        this.version = version;
+        this.author = author;
         this.id_ = id_;
         this.image=image;
+    }
+
+    public DataModel(String name, String author, int id_, String imageURL) {
+        this.name = name;
+        this.author = author;
+        this.id_ = id_;
+        this.imageURL=imageURL;
     }
 
 
@@ -24,8 +32,8 @@ public class DataModel {
     }
 
 
-    public String getVersion() {
-        return version;
+    public String getAuthor() {
+        return author;
     }
 
     public Bitmap getImage() {

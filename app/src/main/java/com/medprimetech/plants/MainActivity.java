@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity  {
     private RecyclerView.LayoutManager layoutManager;
     private static RecyclerView recyclerView;
     private static ArrayList<DataModel> data;
+    private static ArrayList<DataModel> datafromdb;
     static View.OnClickListener myOnClickListener;
     private static ArrayList<Integer> removedItems;
 
@@ -77,6 +78,8 @@ public class MainActivity extends AppCompatActivity  {
 
     ImageLoaderConfiguration config ;
 
+    int LastID;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,15 +90,40 @@ public class MainActivity extends AppCompatActivity  {
         ImageLoader.getInstance().init(config);
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference().child("feed");
-        Query myTopPostsQuery = myRef.orderByKey().limitToFirst(1).startAt("2");
+        final DatabaseReference myRef = database.getReference().child("feed");
+
+        if(false){
+
+            FirebaseDatabase db = FirebaseDatabase.getInstance();
+            DatabaseReference ref = database.getReference().child("feed");
+            for(int i =1 ; i<30 ; i++){
+                ref.child(String.valueOf(i)).child("imgTitle").setValue("asdasd"+String.valueOf(i));
+                ref.child(String.valueOf(i)).child("imgAuthor").setValue("asdasd"+String.valueOf(i));
+                ref.child(String.valueOf(i)).child("imgMSG").setValue("asdasd"+String.valueOf(i));
+                ref.child(String.valueOf(i)).child("imgurl").setValue("https://firebasestorage.googleapis.com/v0/b/plants-db216.appspot.com/o/neem.jpeg?alt=media&token=5bd4cb1c-311b-4b02-a20c-8f1b3dcc7b09");
+            }
+        }
+
+        //Query myTopPostsQuery = myRef.orderByKey().limitToFirst(1).startAt("2");
+        final Query myTopPostsQuery = myRef.orderByKey().limitToFirst(10);
+
         myTopPostsQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
                 for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
                     // TODO: handle the post
+                    String name = postSnapshot.child("imgTitle").getValue().toString();
+                    String author = postSnapshot.child("imgAuthor").getValue().toString();
+                    int id = Integer.parseInt(postSnapshot.getKey().toString());
+                    LastID = id;
+                    String imageURL= postSnapshot.child("imgurl").getValue().toString();
+                    datafromdb.add(new DataModel(name,author,id,imageURL));
                     Log.d(TAG, "onDataChange: "+ postSnapshot.getValue()+postSnapshot.getKey());
                 }
+
+                datafromdb.remove(datafromdb.size()-1);
+                loadFromDB();
 
             }
 
@@ -163,16 +191,16 @@ public class MainActivity extends AppCompatActivity  {
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
         data = new ArrayList<DataModel>();
+        datafromdb = new ArrayList<DataModel>();
         adapter = new CustomAdapter(data);
         recyclerView.setAdapter(adapter);
 
 
 
-        loadinitcard();
+        //loadinitcard();
 
 
 
-        final boolean[] loading = {true};
         final int[] pastVisiblesItems = new int[1];
         final int[] visibleItemCount = new int[1];
         final int[] totalItemCount = new int[1];
@@ -189,30 +217,67 @@ public class MainActivity extends AppCompatActivity  {
                     pastVisiblesItems[0] = ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
 
 
-                    if (loading[0])
+                    if (loading)
                     {
                         if ( (visibleItemCount[0] + pastVisiblesItems[0]) >= totalItemCount[0])
                         {
-                            loading[0] = false;
+                            loading = false;
                             Log.v("...", "Last Item Wow !");
                             //Do pagination.. i.e. fetch new data
 
-                            ImageLoader imageLoader = ImageLoader.getInstance();
-                            imageLoader.loadImage("https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_120x44dp.png", new SimpleImageLoadingListener() {
+
+                            Query myTopPostsQuery = myRef.orderByKey().limitToFirst(2).startAt(String.valueOf(LastID));
+
+
+                            myTopPostsQuery.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
-                                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                                    // Do whatever you want with Bitmap
-                                    Log.d(TAG, "onLoadingComplete: ");
-                                    loading[0] = true;
-                                    data.add(new DataModel(
-                                            MyData.nameArray[0],
-                                            MyData.versionArray[0],
-                                            MyData.id_[0],
-                                            loadedImage
-                                    ));
-                                    adapter.notifyDataSetChanged();
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                                    for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
+                                        // TODO: handle the post
+                                        String name = postSnapshot.child("imgTitle").getValue().toString();
+                                        String author = postSnapshot.child("imgAuthor").getValue().toString();
+                                        int id = Integer.parseInt(postSnapshot.getKey().toString());
+                                        LastID = id;
+                                        String imageURL= postSnapshot.child("imgurl").getValue().toString();
+                                        datafromdb.add(new DataModel(name,author,id,imageURL));
+                                        Log.d(TAG, "onDataChange: "+ postSnapshot.getValue()+postSnapshot.getKey());
+                                    }
+
+                                    datafromdb.remove(datafromdb.size()-1);
+                                    loadFromDB();
+
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
                                 }
                             });
+
+
+
+
+
+
+
+//
+//                            ImageLoader imageLoader = ImageLoader.getInstance();
+//                            imageLoader.loadImage("https://firebasestorage.googleapis.com/v0/b/plants-db216.appspot.com/o/neem.jpeg?alt=media&token=5bd4cb1c-311b-4b02-a20c-8f1b3dcc7b09", new SimpleImageLoadingListener() {
+//                                @Override
+//                                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+//                                    // Do whatever you want with Bitmap
+//                                    Log.d(TAG, "onLoadingComplete: ");
+//                                    loading[0] = true;
+//                                    data.add(new DataModel(
+//                                            MyData.nameArray[0],
+//                                            MyData.versionArray[0],
+//                                            MyData.id_[0],
+//                                            loadedImage
+//                                    ));
+//                                    adapter.notifyDataSetChanged();
+//                                }
+//                            });
 
 
 
@@ -276,6 +341,39 @@ public class MainActivity extends AppCompatActivity  {
         }
     }
 
+
+
+    private void loadFromDB(){
+        if(datafromdb.size() > 0){
+            loading = false;
+
+            ImageLoader imageLoader = ImageLoader.getInstance();
+
+            final int finalI = first_load;
+
+            imageLoader.loadImage(datafromdb.get(0).imageURL, new SimpleImageLoadingListener() {
+                @Override
+                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                    // Do whatever you want with Bitmap
+                    Log.d(TAG, "onLoadingComplete: ");
+                    data.add(new DataModel(
+                            datafromdb.get(0).getName(),
+                            datafromdb.get(0).getAuthor(),
+                            datafromdb.get(0).getId(),
+                            loadedImage
+                    ));
+                    datafromdb.remove(0);
+                    adapter.notifyDataSetChanged();
+                    Log.d(TAG, "onLoadingComplete: @@@");
+                    loadFromDB();
+                }
+            });
+
+        }else{
+            loading = true;
+        }
+
+    }
 
 
     private void addDrawerItems() {
@@ -366,27 +464,13 @@ public class MainActivity extends AppCompatActivity  {
         @Override
         public void onClick(View v) {
             //removeItem(v);
-            Log.d("test", "onClick: ");
-
-        }
-
-        private void removeItem(View v) {
             int selectedItemPosition = recyclerView.getChildPosition(v);
-            RecyclerView.ViewHolder viewHolder
-                    = recyclerView.findViewHolderForPosition(selectedItemPosition);
-            TextView textViewName
-                    = (TextView) viewHolder.itemView.findViewById(R.id.textViewName);
-            String selectedName = (String) textViewName.getText();
-            int selectedItemId = -1;
-            for (int i = 0; i < MyData.nameArray.length; i++) {
-                if (selectedName.equals(MyData.nameArray[i])) {
-                    selectedItemId = MyData.id_[i];
-                }
-            }
-            removedItems.add(selectedItemId);
-            data.remove(selectedItemPosition);
-            adapter.notifyItemRemoved(selectedItemPosition);
+
+            Log.d("test", "onClick: "+data.get(selectedItemPosition).getId());
+
         }
+
+
     }
 
 
