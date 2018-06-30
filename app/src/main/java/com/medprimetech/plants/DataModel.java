@@ -1,15 +1,17 @@
 package com.medprimetech.plants;
 
 
+import android.graphics.Bitmap;
+
 public class DataModel {
 
 
     String name;
     String version;
     int id_;
-    int image;
+    Bitmap image;
 
-    public DataModel(String name, String version, int id_, int image) {
+    public DataModel(String name, String version, int id_, Bitmap image) {
         this.name = name;
         this.version = version;
         this.id_ = id_;
@@ -26,7 +28,7 @@ public class DataModel {
         return version;
     }
 
-    public int getImage() {
+    public Bitmap getImage() {
         return image;
     }
 

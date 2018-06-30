@@ -2,8 +2,12 @@ package com.medprimetech.plants;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -24,7 +28,18 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+
 import java.util.ArrayList;
+import android.Manifest;
 
 
 public class MainActivity extends AppCompatActivity  {
@@ -33,6 +48,8 @@ public class MainActivity extends AppCompatActivity  {
     private ListView lvToolbarSerch;
     private String TAG = MainActivity.class.getSimpleName();
     String[] arrays = new String[]{"98411", "98422", "98433", "98444", "98455"};
+
+    private  int first_load = 10;
 
 
 
@@ -53,9 +70,71 @@ public class MainActivity extends AppCompatActivity  {
     private static ArrayList<Integer> removedItems;
 
 
+
+
+    private boolean loading = true;
+    int pastVisiblesItems, visibleItemCount, totalItemCount;
+
+    ImageLoaderConfiguration config ;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Create global configuration and initialize ImageLoader with this config
+        config = new ImageLoaderConfiguration.Builder(this).build();
+        ImageLoader.getInstance().init(config);
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference().child("feed");
+        Query myTopPostsQuery = myRef.orderByKey().limitToFirst(1).startAt("2");
+        myTopPostsQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
+                    // TODO: handle the post
+                    Log.d(TAG, "onDataChange: "+ postSnapshot.getValue()+postSnapshot.getKey());
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+//        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
+//                    // TODO: handle the post
+//                    Log.d(TAG, "onDataChange: "+ postSnapshot.child("imgurl").getValue());
+//                }
+//
+//
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
+
+
+
+
+
+        int PERMISSION_ALL = 1;
+        String[] PERMISSIONS = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.WRITE_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_SMS, Manifest.permission.CAMERA};
+
+        if(!hasPermissions(this, PERMISSIONS)){
+            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_ALL);
+        }
+
         setContentView(R.layout.activity_main);
 
        // mDrawerList = (ListView)findViewById(R.id.navList);
@@ -80,20 +159,68 @@ public class MainActivity extends AppCompatActivity  {
 
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
+
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
         data = new ArrayList<DataModel>();
-        for (int i = 0; i < MyData.nameArray.length; i++) {
-            data.add(new DataModel(
-                    MyData.nameArray[i],
-                    MyData.versionArray[i],
-                    MyData.id_[i],
-                    MyData.drawableArray[i]
-            ));
-        }
-
         adapter = new CustomAdapter(data);
         recyclerView.setAdapter(adapter);
+
+
+
+        loadinitcard();
+
+
+
+        final boolean[] loading = {true};
+        final int[] pastVisiblesItems = new int[1];
+        final int[] visibleItemCount = new int[1];
+        final int[] totalItemCount = new int[1];
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener()
+        {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy)
+            {
+                if(dy > 0) //check for scroll down
+                {
+                    visibleItemCount[0] = layoutManager.getChildCount();
+                    totalItemCount[0] = layoutManager.getItemCount();
+                    pastVisiblesItems[0] = ((LinearLayoutManager)recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
+
+
+                    if (loading[0])
+                    {
+                        if ( (visibleItemCount[0] + pastVisiblesItems[0]) >= totalItemCount[0])
+                        {
+                            loading[0] = false;
+                            Log.v("...", "Last Item Wow !");
+                            //Do pagination.. i.e. fetch new data
+
+                            ImageLoader imageLoader = ImageLoader.getInstance();
+                            imageLoader.loadImage("https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_120x44dp.png", new SimpleImageLoadingListener() {
+                                @Override
+                                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                                    // Do whatever you want with Bitmap
+                                    Log.d(TAG, "onLoadingComplete: ");
+                                    loading[0] = true;
+                                    data.add(new DataModel(
+                                            MyData.nameArray[0],
+                                            MyData.versionArray[0],
+                                            MyData.id_[0],
+                                            loadedImage
+                                    ));
+                                    adapter.notifyDataSetChanged();
+                                }
+                            });
+
+
+
+                        }
+                    }
+                }
+            }
+        });
 
         mActivityTitle = "Feeds";
         setupDrawer();
@@ -113,6 +240,41 @@ public class MainActivity extends AppCompatActivity  {
 
     }
 
+
+
+    private void loadinitcard(){
+        if(first_load>0){
+
+
+                ImageLoader imageLoader = ImageLoader.getInstance();
+
+                final int finalI = first_load;
+
+                imageLoader.loadImage("https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_120x44dp.png", new SimpleImageLoadingListener() {
+                    @Override
+                    public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                        // Do whatever you want with Bitmap
+                        Log.d(TAG, "onLoadingComplete: ");
+                        data.add(new DataModel(
+                                MyData.nameArray[finalI],
+                                MyData.versionArray[finalI],
+                                MyData.id_[finalI],
+                                loadedImage
+                        ));
+                        first_load --;
+                        adapter.notifyDataSetChanged();
+                        Log.d(TAG, "onLoadingComplete: @@@");
+                        loadinitcard();
+                    }
+                });
+
+
+
+
+
+
+        }
+    }
 
 
 
@@ -205,7 +367,6 @@ public class MainActivity extends AppCompatActivity  {
         public void onClick(View v) {
             //removeItem(v);
             Log.d("test", "onClick: ");
-            addRemovedItemToList();
 
         }
 
@@ -257,20 +418,32 @@ public class MainActivity extends AppCompatActivity  {
 //        return super.onOptionsItemSelected(item);
 //    }
 
-    private static void addRemovedItemToList() {
-        for(int i=0; i< MyData.nameArray.length;i++) {
+//    private static void addRemovedItemToList() {
+//        for(int i=0; i< MyData.nameArray.length;i++) {
+//
+//
+//            int addItemAtListPosition = 3;
+//            data.add(addItemAtListPosition, new DataModel(
+//                    MyData.nameArray[i],
+//                    MyData.versionArray[i],
+//                    MyData.id_[i],
+//                    MyData.drawableArray[i]
+//            ));
+//            adapter.notifyItemInserted(addItemAtListPosition);
+//
+//        }
+//    }
 
 
-            int addItemAtListPosition = 3;
-            data.add(addItemAtListPosition, new DataModel(
-                    MyData.nameArray[i],
-                    MyData.versionArray[i],
-                    MyData.id_[i],
-                    MyData.drawableArray[i]
-            ));
-            adapter.notifyItemInserted(addItemAtListPosition);
-
+    public static boolean hasPermissions(Context context, String... permissions) {
+        if (context != null && permissions != null) {
+            for (String permission : permissions) {
+                if (ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
         }
+        return true;
     }
 
 

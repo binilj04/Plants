@@ -54,7 +54,8 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.MyViewHold
 
         textViewName.setText(dataSet.get(listPosition).getName());
         textViewVersion.setText(dataSet.get(listPosition).getVersion());
-        imageView.setImageResource(dataSet.get(listPosition).getImage());
+        //imageView.setImageResource(dataSet.get(listPosition).getImage());
+        imageView.setImageBitmap(dataSet.get(listPosition).getImage());
     }
 
     @Override
