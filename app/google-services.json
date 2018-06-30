@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "803586002902",
+    "firebase_url": "https://plants-db216.firebaseio.com",
+    "project_id": "plants-db216",
+    "storage_bucket": "plants-db216.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803586002902:android:574ca8f18c125cc4",
+        "android_client_info": {
+          "package_name": "com.medprimetech.plants"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "803586002902-2bfirc5q3pgt4vpjihudqceqralt2a66.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-6X7lq7fgaTmRoYpOPwJC95h6gdZqzvM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

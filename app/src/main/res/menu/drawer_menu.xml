@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_camera"
+            android:icon="@android:drawable/picture_frame"
+            android:title="Feed" />
+        <item
+            android:id="@+id/nav_gallery"
+            android:icon="@android:drawable/picture_frame"
+            android:title="profile" />
+        <item
+            android:id="@+id/nav_slideshow"
+            android:icon="@android:drawable/picture_frame"
+            android:title="My plants" />
+
+    </group>
+</menu>
+
