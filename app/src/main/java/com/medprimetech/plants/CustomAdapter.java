@@ -52,8 +52,8 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.MyViewHold
         TextView textViewAuthor = holder.textViewAuthor;
         ImageView imageView = holder.imageViewIcon;
 
-        textViewName.setText(dataSet.get(listPosition).getName());
-        textViewAuthor.setText(dataSet.get(listPosition).getAuthor());
+        textViewName.setText("Plant Name:"+dataSet.get(listPosition).getName());
+        textViewAuthor.setText("Author: "+dataSet.get(listPosition).getAuthor());
         //imageView.setImageResource(dataSet.get(listPosition).getImage());
         imageView.setImageBitmap(dataSet.get(listPosition).getImage());
     }

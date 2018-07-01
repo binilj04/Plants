@@ -1,48 +1,76 @@
 package com.medprimetech.plants;
 
+import android.app.Activity;
+import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
+import java.io.File;
 import java.util.ArrayList;
 import android.Manifest;
 
 
 public class MainActivity extends AppCompatActivity  {
+
+
+    ProgressDialog pd;
 
     private Toolbar tbMainSearch;
     private ListView lvToolbarSerch;
@@ -78,13 +106,20 @@ public class MainActivity extends AppCompatActivity  {
 
     ImageLoaderConfiguration config ;
 
-    int LastID;
+    double LastID;
 
+    private StorageReference mStorageRef;
+
+
+    private static final int TAKE_PICTURE = 1;
+    private Uri imageUri;
+    Uri uriSavedImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mStorageRef = FirebaseStorage.getInstance().getReference();
         // Create global configuration and initialize ImageLoader with this config
         config = new ImageLoaderConfiguration.Builder(this).build();
         ImageLoader.getInstance().init(config);
@@ -95,7 +130,7 @@ public class MainActivity extends AppCompatActivity  {
         if(false){
 
             FirebaseDatabase db = FirebaseDatabase.getInstance();
-            DatabaseReference ref = database.getReference().child("feed");
+            DatabaseReference ref = db.getReference().child("feed");
             for(int i =1 ; i<30 ; i++){
                 ref.child(String.valueOf(i)).child("imgTitle").setValue("asdasd"+String.valueOf(i));
                 ref.child(String.valueOf(i)).child("imgAuthor").setValue("asdasd"+String.valueOf(i));
@@ -115,7 +150,7 @@ public class MainActivity extends AppCompatActivity  {
                     // TODO: handle the post
                     String name = postSnapshot.child("imgTitle").getValue().toString();
                     String author = postSnapshot.child("imgAuthor").getValue().toString();
-                    int id = Integer.parseInt(postSnapshot.getKey().toString());
+                    double id = Double.parseDouble(postSnapshot.getKey().toString());
                     LastID = id;
                     String imageURL= postSnapshot.child("imgurl").getValue().toString();
                     datafromdb.add(new DataModel(name,author,id,imageURL));
@@ -155,7 +190,8 @@ public class MainActivity extends AppCompatActivity  {
 
 
 
-
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
         int PERMISSION_ALL = 1;
         String[] PERMISSIONS = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.WRITE_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_SMS, Manifest.permission.CAMERA};
 
@@ -166,7 +202,40 @@ public class MainActivity extends AppCompatActivity  {
         setContentView(R.layout.activity_main);
 
        // mDrawerList = (ListView)findViewById(R.id.navList);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int id = item.getItemId();
+
+                if (id == R.id.nav_camera) {
+                    // Handle the camera action
+                    Log.d(TAG, "onNavigationItemSelected: camera");
+
+                    String value = "Default";
+
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    File file=new File(getTempOutputMediaFilePath("default"));
+                    uriSavedImage = Uri.fromFile(file);
+
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, uriSavedImage);
+                    startActivityForResult(intent, 1);
+
+
+
+                } else if (id == R.id.nav_gallery) {
+                    Log.d(TAG, "onNavigationItemSelected: nav_gallery");
+
+                } else if (id == R.id.nav_slideshow) {
+                    Log.d(TAG, "onNavigationItemSelected: nav_slideshow");
+
+                }
+                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+                drawer.closeDrawer(GravityCompat.START);
+                return false;
+            }
+        });
 
         //addDrawerItems();
 
@@ -237,7 +306,7 @@ public class MainActivity extends AppCompatActivity  {
                                         // TODO: handle the post
                                         String name = postSnapshot.child("imgTitle").getValue().toString();
                                         String author = postSnapshot.child("imgAuthor").getValue().toString();
-                                        int id = Integer.parseInt(postSnapshot.getKey().toString());
+                                        Double id = Double.parseDouble(postSnapshot.getKey().toString());
                                         LastID = id;
                                         String imageURL= postSnapshot.child("imgurl").getValue().toString();
                                         datafromdb.add(new DataModel(name,author,id,imageURL));
@@ -297,11 +366,42 @@ public class MainActivity extends AppCompatActivity  {
 
 
 
-        getSupportActionBar().setTitle("Plantae");
+        getSupportActionBar().setTitle("Plants");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
+
+    }
+
+
+    //temp file name
+    private String getTempOutputMediaFilePath(String folderName){
+        String path="";
+        File file = getOutputMediaFile(folderName);
+        if(file!=null)
+            path=file.getPath() + File.separator + "temp.jpg";
+        return path;
+
+    }
+
+    //get final folder to save image
+    private File getOutputMediaFile(String folderName){
+        File mediaStorageDir=null;
+        if(true) {
+            mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES) + File.separator + "Test" +
+                    File.separator + folderName+
+                    File.separator+"waka");
+
+            if (!mediaStorageDir.exists()) {
+                if (!mediaStorageDir.mkdirs()) {
+                    Log.d("Cilika App", "failed to create directory");
+                    return null;
+                }
+            }
+        }
+        return mediaStorageDir;
 
     }
 
@@ -335,10 +435,115 @@ public class MainActivity extends AppCompatActivity  {
 
 
 
+        }
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO Auto-generated method stub
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode){
+            case 1 :
+                Log.d(TAG, "onActivityResult: "+uriSavedImage.getPath() );
+
+                pd=ProgressDialog.show(MainActivity.this,"","Image is getting uploaded",false);
+
+// Create a reference to "mountains.jpg"
+                long ll = System.currentTimeMillis();
+
+                final StorageReference mountainsRef = mStorageRef.child(String.valueOf(ll));
+                UploadTask uploadTask = mountainsRef.putFile(uriSavedImage);
 
 
+
+                Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                    @Override
+                    public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                        if (!task.isSuccessful()) {
+                            throw task.getException();
+                        }
+
+                        // Continue with the task to get the download URL
+                        return mountainsRef.getDownloadUrl();
+                    }
+                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Uri> task) {
+                        if (task.isSuccessful()) {
+                            imageUri = task.getResult();
+
+                            Log.d(TAG, "onComplete: Download link"+ imageUri
+                            );
+                            pd.dismiss();
+                            showDialog();
+
+
+
+                        } else {
+                            // Handle failures
+                            // ...
+                        }
+                    }
+                });
+
+
+
+
+                break;
 
         }
+
+    }
+
+
+    private void showDialog(){
+
+            LayoutInflater inflater = getLayoutInflater();
+            View alertLayout = inflater.inflate(R.layout.layout_custom_dialog, null);
+            final EditText yourName = alertLayout.findViewById(R.id.yourname);
+            final EditText plantName = alertLayout.findViewById(R.id.plantname);
+            final EditText msg = alertLayout.findViewById(R.id.msg);
+
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setTitle("Info");
+            // this is set the view from XML inside AlertDialog
+            alert.setView(alertLayout);
+            // disallow cancel of AlertDialog on click of back button and outside touch
+            alert.setCancelable(false);
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Toast.makeText(getBaseContext(), "Cancel clicked", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            alert.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String yourname = yourName.getText().toString();
+                    String plantname = plantName.getText().toString();
+                    String message = msg.getText().toString();
+                    Toast.makeText(getBaseContext(), "Username: " + yourname + " Email: " + plantname, Toast.LENGTH_SHORT).show();
+
+                    long ll = System.currentTimeMillis();
+
+                    FirebaseDatabase db = FirebaseDatabase.getInstance();
+                    DatabaseReference ref = db.getReference().child("feed");
+
+                        ref.child(String.valueOf(ll)).child("imgTitle").setValue(plantname);
+                        ref.child(String.valueOf(ll)).child("imgAuthor").setValue(yourname);
+                        ref.child(String.valueOf(ll)).child("imgMSG").setValue(message);
+                        ref.child(String.valueOf(ll)).child("imgurl").setValue(imageUri.toString());
+
+
+
+                }
+            });
+            AlertDialog dialog = alert.create();
+            dialog.show();
+
     }
 
 
@@ -376,12 +581,12 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-    private void addDrawerItems() {
-        String[] osArray = { "Profile", "My Plants", "Write", "Sell" };
-        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
-        mDrawerList.setAdapter(mAdapter);
-
-    }
+//    private void addDrawerItems() {
+//        String[] osArray = { "Profile", "My Plants", "Write", "Sell" };
+//        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
+//        mDrawerList.setAdapter(mAdapter);
+//
+//    }
 
     private void setupDrawer() {
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
@@ -453,7 +658,7 @@ public class MainActivity extends AppCompatActivity  {
 
 
 
-    private static class MyOnClickListener implements View.OnClickListener {
+    private class MyOnClickListener implements View.OnClickListener {
 
         private final Context context;
 
@@ -467,6 +672,13 @@ public class MainActivity extends AppCompatActivity  {
             int selectedItemPosition = recyclerView.getChildPosition(v);
 
             Log.d("test", "onClick: "+data.get(selectedItemPosition).getId());
+            Intent i = new Intent(getApplication(),DetailViewActivity.class);
+            AppData.imagedata = data.get(selectedItemPosition).getImage();
+
+
+            i.putExtra("ID",  String.format ("%.0f",data.get(selectedItemPosition).getId()));
+            startActivity(i);
+
 
         }
 
@@ -529,6 +741,10 @@ public class MainActivity extends AppCompatActivity  {
         }
         return true;
     }
+
+
+
+
 
 
 
